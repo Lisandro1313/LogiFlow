@@ -1,0 +1,393 @@
+{
+  "info": {
+    "name": "LogiFlow API",
+    "_postman_id": "logiflow-api-collection",
+    "description": "Complete API collection for LogiFlow - Enterprise Logistics Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('jwt_token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@logiflow.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Updated\",\n  \"phone\": \"+51999888777\",\n  \"address\": \"Av. Principal 123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders?status=pending&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders/:id",
+              "host": ["{{base_url}}"],
+              "path": ["orders", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{order_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customer_id}}\",\n  \"deliveryAddress\": \"Av. Larco 1234, Miraflores\",\n  \"latitude\": -12.1234,\n  \"longitude\": -77.5678,\n  \"zone\": \"Miraflores\",\n  \"notes\": \"Llamar antes de llegar\",\n  \"orderDetails\": [\n    {\n      \"productName\": \"Pizza Grande\",\n      \"quantity\": 2,\n      \"unitPrice\": 45.00\n    },\n    {\n      \"productName\": \"Gaseosa 1.5L\",\n      \"quantity\": 1,\n      \"unitPrice\": 8.50\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"agentId\": \"{{agent_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/:id",
+              "host": ["{{base_url}}"],
+              "path": ["orders", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{order_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders/:id",
+              "host": ["{{base_url}}"],
+              "path": ["orders", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{order_id}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers",
+              "host": ["{{base_url}}"],
+              "path": ["customers"]
+            }
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"María García\",\n  \"email\": \"maria@example.com\",\n  \"phone\": \"+51999888777\",\n  \"address\": \"Av. Arequipa 2000, Lima\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers",
+              "host": ["{{base_url}}"],
+              "path": ["customers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agents",
+      "item": [
+        {
+          "name": "Get All Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/agents",
+              "host": ["{{base_url}}"],
+              "path": ["agents"]
+            }
+          }
+        },
+        {
+          "name": "Create Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Carlos Rodríguez\",\n  \"phone\": \"+51987654321\",\n  \"vehicleType\": \"Moto\",\n  \"vehiclePlate\": \"ABC-123\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/agents",
+              "host": ["{{base_url}}"],
+              "path": ["agents"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Routes",
+      "item": [
+        {
+          "name": "Get All Routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/routes",
+              "host": ["{{base_url}}"],
+              "path": ["routes"]
+            }
+          }
+        },
+        {
+          "name": "Optimize Route (AI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agentId\": \"{{agent_id}}\",\n  \"orders\": [\n    {\n      \"id\": \"order-1\",\n      \"latitude\": -12.0464,\n      \"longitude\": -77.0428,\n      \"address\": \"Jr. Lampa 123\"\n    },\n    {\n      \"id\": \"order-2\",\n      \"latitude\": -12.0500,\n      \"longitude\": -77.0450,\n      \"address\": \"Av. Abancay 456\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routes/optimize",
+              "host": ["{{base_url}}"],
+              "path": ["routes", "optimize"]
+            }
+          }
+        },
+        {
+          "name": "Create Route",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ruta Centro Lima\",\n  \"agentId\": \"{{agent_id}}\",\n  \"orderIds\": [\"order-1\", \"order-2\"],\n  \"totalDistance\": 5.8,\n  \"estimatedTime\": 35\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routes",
+              "host": ["{{base_url}}"],
+              "path": ["routes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "Get Trends",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/trends?startDate=2025-11-01&endDate=2025-11-08",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "trends"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-11-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-11-08"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
