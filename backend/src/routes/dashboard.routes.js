@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 router.get('/stats', getDashboardStats);
+router.get('/metrics', getDashboardStats); // Alias para compatibilidad con frontend
 router.get('/trends', getOrderTrends);
 
 export default router;

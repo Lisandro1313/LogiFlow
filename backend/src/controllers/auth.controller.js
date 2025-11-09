@@ -134,7 +134,13 @@ export const getProfile = async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
-        res.json(user);
+        // Adaptar respuesta para compatibilidad con frontend
+        const response = {
+            ...user,
+            name: `${user.firstName} ${user.lastName}`, // Agregar campo 'name' para frontend
+        };
+
+        res.json(response);
     } catch (error) {
         console.error('Error al obtener perfil:', error);
         res.status(500).json({ error: 'Error al obtener perfil' });
@@ -144,14 +150,22 @@ export const getProfile = async (req, res) => {
 // Actualizar perfil
 export const updateProfile = async (req, res) => {
     try {
-        const { firstName, lastName, phone } = req.body;
+        let { firstName, lastName, name, phone, address } = req.body;
+
+        // Si viene 'name', dividir en firstName y lastName
+        if (name && !firstName && !lastName) {
+            const nameParts = name.trim().split(' ');
+            firstName = nameParts[0];
+            lastName = nameParts.slice(1).join(' ') || nameParts[0];
+        }
+
+        const updateData = {};
+        if (firstName) updateData.firstName = firstName;
+        if (lastName) updateData.lastName = lastName;
 
         const user = await prisma.user.update({
             where: { id: req.user.userId },
-            data: {
-                ...(firstName && { firstName }),
-                ...(lastName && { lastName }),
-            },
+            data: updateData,
             select: {
                 id: true,
                 email: true,
@@ -162,9 +176,15 @@ export const updateProfile = async (req, res) => {
             },
         });
 
+        // Respuesta adaptada para frontend
+        const response = {
+            ...user,
+            name: `${user.firstName} ${user.lastName}`,
+        };
+
         res.json({
             message: 'Perfil actualizado',
-            user,
+            user: response,
         });
     } catch (error) {
         console.error('Error al actualizar perfil:', error);
