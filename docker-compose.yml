@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: logiflow-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: logiflow
+      POSTGRES_PASSWORD: logiflow123
+      POSTGRES_DB: logiflow_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - logiflow-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: logiflow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - logiflow-network
+
+  # pgAdmin (opcional - para administrar DB visualmente)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: logiflow-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@logiflow.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - logiflow-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
+
+
+networks:
+  logiflow-network:
+    driver: bridge

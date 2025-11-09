@@ -1,0 +1,236 @@
+// LogiFlow Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// USUARIOS Y AUTENTICACIÓN
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole @default(OPERATOR)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deliveryAgent DeliveryAgent?
+  orders        Order[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  DELIVERY_AGENT
+}
+
+// REPARTIDORES
+model DeliveryAgent {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone        String
+  vehicleType  VehicleType
+  licensePlate String?
+  isAvailable  Boolean  @default(true)
+  rating       Float    @default(5.0)
+  totalDeliveries Int   @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  routes        Route[]
+  trackingLogs  TrackingLog[]
+  deliveryPhotos DeliveryPhoto[]
+
+  @@map("delivery_agents")
+}
+
+enum VehicleType {
+  BIKE
+  MOTORCYCLE
+  CAR
+  VAN
+  TRUCK
+}
+
+// CLIENTES
+model Customer {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  phone     String
+  address   String
+  latitude  Float?
+  longitude Float?
+  zoneId    String?
+  zone      Zone?    @relation(fields: [zoneId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("customers")
+}
+
+// ZONAS DE REPARTO
+model Zone {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  polygon     Json?    // GeoJSON polygon
+  color       String   @default("#3B82F6")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customers Customer[]
+  orders    Order[]
+
+  @@map("zones")
+}
+
+// PEDIDOS
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique
+  customerId      String
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  deliveryAddress String
+  deliveryLat     Float?
+  deliveryLng     Float?
+  zoneId          String?
+  zone            Zone?       @relation(fields: [zoneId], references: [id])
+  status          OrderStatus @default(PENDING)
+  priority        Priority    @default(NORMAL)
+  scheduledDate   DateTime?
+  scheduledTimeSlot String?   // "09:00-12:00"
+  totalAmount     Float       @default(0)
+  notes           String?
+  qrCode          String?
+  createdById     String
+  createdBy       User        @relation(fields: [createdById], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items         OrderItem[]
+  routes        RouteOrder[]
+  trackingLogs  TrackingLog[]
+  deliveryPhotos DeliveryPhoto[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ITEMS DEL PEDIDO
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productName String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+  createdAt   DateTime @default(now())
+
+  @@map("order_items")
+}
+
+// RUTAS GENERADAS
+model Route {
+  id              String   @id @default(uuid())
+  routeName       String
+  deliveryAgentId String
+  deliveryAgent   DeliveryAgent @relation(fields: [deliveryAgentId], references: [id])
+  routeDate       DateTime
+  status          RouteStatus @default(PENDING)
+  totalDistance   Float?   // en kilómetros
+  estimatedTime   Int?     // en minutos
+  actualTime      Int?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  optimizationData Json?   // metadata del algoritmo de optimización
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders RouteOrder[]
+
+  @@map("routes")
+}
+
+enum RouteStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// RELACIÓN RUTA-PEDIDO (con orden de visita)
+model RouteOrder {
+  id       String @id @default(uuid())
+  routeId  String
+  route    Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sequence Int    // orden de visita en la ruta
+  status   OrderStatus @default(ASSIGNED)
+  deliveredAt DateTime?
+  failedReason String?
+
+  @@unique([routeId, orderId])
+  @@map("route_orders")
+}
+
+// TRACKING EN TIEMPO REAL
+model TrackingLog {
+  id              String   @id @default(uuid())
+  deliveryAgentId String
+  deliveryAgent   DeliveryAgent @relation(fields: [deliveryAgentId], references: [id])
+  orderId         String?
+  order           Order?   @relation(fields: [orderId], references: [id])
+  latitude        Float
+  longitude       Float
+  status          String?  // moving, stopped, delivering
+  speed           Float?   // km/h
+  battery         Int?     // % (para móvil)
+  timestamp       DateTime @default(now())
+
+  @@map("tracking_logs")
+}
+
+// FOTOS DE COMPROBANTE
+model DeliveryPhoto {
+  id              String   @id @default(uuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryAgentId String
+  deliveryAgent   DeliveryAgent @relation(fields: [deliveryAgentId], references: [id])
+  photoUrl        String
+  uploadedAt      DateTime @default(now())
+
+  @@map("delivery_photos")
+}
